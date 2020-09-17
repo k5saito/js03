@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>Chatアプリ</title>
+<link rel="stylesheet" href="css/reset.css">    
+<link rel="stylesheet" href="css/chat.css">
+</head>
+<body>
+
+<!-- コンテンツ表示画面 -->
+
+<div class="tl">
+    <div class="tl_box" id="output"></div>
+</div>
+<button id="openModal" class="send_btn">投稿</button>
+
+<!-- モーダルエリアここから -->
+<section id="modalArea" class="modalArea">
+  <div id="modalBg" class="modalBg"></div>
+  <div class="modalWrapper">
+    <div class="modalContents">
+        <div class="name_box">名前：<input type="text" id="uname" class="s_name"></div>
+        <textarea id="text" cols="30" rows="10" class="s_txt"></textarea>
+        <div class="btn_">
+            <button id="send" class="s_btn">送信</button>
+    </div>
+    </div>
+    <div id="closeModal" class="closeModal">
+      ×
+    </div>
+  </div>
+</section>
+<!-- モーダルエリアここまで -->
+
+
+<!--/ コンテンツ表示画面 -->
+
+
+
+<!-- JQuery -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<!-- JQuery -->
+
+<!-- フロント系JS -->
+<script>
+$(function () {
+    $('#openModal').click(function(){
+        $('#modalArea').fadeIn();
+    });
+    $('#closeModal , #modalBg').click(function(){
+      $('#modalArea').fadeOut();
+    });
+  });
+</script>
+<!--** 以下Firebase **-->
+
+<!-- The core Firebase JS SDK is always required and must be listed first -->
+<script src="https://www.gstatic.com/firebasejs/7.20.0/firebase.js"></script>
+<script src="/__/firebase/7.16.0/firebase-auth.js"></script> 
+
+<!-- TODO: Add SDKs for Firebase products that you want to use
+     https://firebase.google.com/docs/web/setup#available-libraries -->
+
+<script>
+    
+  // Your web app's Firebase configuration
+ 
+
+//.refの意味はユニークキーを自動で振る。.ref（book）のように記載するとその名称に固定化される
+const ref = firebase.database().ref(); 
+
+//関数定義
+function send(){
+    const uname = $("#uname").val();
+    const text = $("#text").val();
+
+    //曜日配列
+    let eMonth = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    let week   = ["日", "月", "火", "水", "木", "金", "土"];
+
+    //日時取得
+    let now = new Date();            //日付取得準備（必須）！！
+    let year = now.getFullYear();    //年
+    let month = now.getMonth() + 1;  //月+１を足す
+    let date = now.getDate();        //日
+    let day = now.getDay();          //曜日（数値）
+    let h = now.getHours();          //時
+    let m = now.getMinutes();        //分
+    let s = now.getSeconds();        //秒
+
+    //日時表示文字列の作成
+    let str = year + "-" + month + "-" + date + "(" + week[day] + ") " + h + ":" + m + ":" + s;
+
+
+    // alert(uname + text);
+    //複数の変数を同時に投げるためのオブジェクト変数
+    const msg = {
+        uname:uname,
+        text:text,
+        date:str
+    }
+    // firebaseにデータを投げている。refは上部で変数として宣言して短くしている
+    ref.push(msg); //set=決まった名前、push=はユニーク
+
+    //ページ下部にスクロールするように宣言
+    const psconsole = $('#output');
+    psconsole.scrollTop(
+        psconsole[0].scrollHeight - psconsole.height()
+    ) 
+
+    // 閉じる
+    $('#modalArea').fadeOut();
+
+}
+
+//文字を送信
+$("#send").on("click",function(){
+    send();
+});   
+
+// チャットの受信処理を書く
+ref.on("child_added",function(data){ //firebaseから送られたデータがあればdataに格納している？
+    const v = data.val(); //送信されたオブジェクトの取得
+    const k = data.key; //ユニークキーの取得
+    const h = '<div class="tl_sbox"><span class="tl_name">'+v.uname+'</span><span class="tl_date">'+v.date+'</span><p class="tl_txt">'+v.text+'</p></div>';
+    $("#output").append(h);
+
+});
+
+//イベント情報取得
+$("#text").on("keydown",function(e){ //e eventの意味 変数を受け取る。この場合は、キーを押した名称を入れている
+
+    if(e.keyCode == 13){ //エンターキーが押されたら送信
+        send();
+    }
+
+});
+
+
+</script>
+
+</body>
+</html>
